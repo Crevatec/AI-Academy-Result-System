@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Academic Results{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('student.dashboard') }}" class="back-link">← Dashboard</a>
+      <h1 class="page-title">📁 All Academic Results</h1>
+      <p class="page-sub">{{ student.user.full_name }} — {{ student.matric_number }}</p>
+    </div>
+    <a href="{{ url_for('student.download_transcript') }}" class="btn-primary">⬇ Download Full Transcript</a>
+  </div>
+
+  <!-- CGPA banner -->
+  {% if cgpa_record %}
+  <div class="cgpa-banner">
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ "%.2f"|format(cgpa_record.cgpa) }}</div>
+      <div class="cgpa-key">Cumulative GPA (CGPA)</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ cgpa_record.classification }}</div>
+      <div class="cgpa-key">Classification</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ cgpa_record.total_units_cumulative }}</div>
+      <div class="cgpa-key">Total Credit Units</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ cgpa_record.semesters_completed }}</div>
+      <div class="cgpa-key">Semesters Completed</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Sessions list -->
+  <div class="section-card">
+    <h2 class="section-title">📅 Semester Results</h2>
+
+    {% if sessions_data %}
+    <div class="sessions-list">
+      {% for item in sessions_data %}
+      <div class="session-row">
+        <div class="session-info">
+          <span class="session-name">{{ item.session.session_name }}</span>
+          <span class="session-sem">Semester {{ item.session.semester }}</span>
+        </div>
+        <div class="session-gpa">
+          {% if item.gpa %}
+            <span class="gpa-val">GPA: <strong>{{ "%.2f"|format(item.gpa.gpa) }}</strong></span>
+            <span class="gpa-units">{{ item.gpa.total_units }} units</span>
+            <span class="classification-mini">{{ item.gpa.classification }}</span>
+          {% else %}
+            <span class="text-muted">GPA not computed</span>
+          {% endif %}
+        </div>
+        <div class="session-action">
+          <a href="{{ url_for('student.results_by_session', session_id=item.session.id) }}"
+             class="btn-secondary btn-sm">View Details →</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="carryover-link">
+      <a href="{{ url_for('student.carryovers') }}" class="btn-link">
+        📋 View Carryover Courses →
+      </a>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <p>No released results found. Check back after your department releases results.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

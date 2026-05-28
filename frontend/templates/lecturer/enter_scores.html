@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Enter Scores — {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('lecturer.dashboard') }}" class="back-link">← Back to Dashboard</a>
+      <h1 class="page-title">✏ Enter Scores: {{ course.code }}</h1>
+      <p class="page-sub">
+        {{ course.title }} &middot; {{ course.unit }} Units &middot;
+        Level {{ course.level }} &middot;
+        Session {{ current_session.session_name }} Sem {{ current_session.semester }}
+      </p>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+      <span class="badge badge-info">{{ students|length }} Students</span>
+      <span class="badge badge-scale">{{ course.department.grading_scale }} Scale</span>
+    </div>
+  </div>
+
+  <!-- ── Bulk Upload ─────────────────────────────────────────────────────── -->
+  <div class="section-card upload-card">
+    <h3 class="section-title">📤 Bulk Upload via Excel</h3>
+    <p class="upload-hint">
+      Upload a .xlsx file with columns:
+      <strong>A: Matric Number</strong> &nbsp;
+      <strong>B: Student Name</strong> &nbsp;
+      <strong>C: Score (0-100)</strong>
+    </p>
+    <form method="POST"
+          action="{{ url_for('lecturer.upload_scores', course_id=course.id) }}"
+          enctype="multipart/form-data"
+          class="upload-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="file" name="excel_file" accept=".xlsx,.xls"
+             class="file-input" id="excelFile" />
+      <label for="excelFile" class="file-label">Choose Excel File</label>
+      <button type="submit" class="btn-secondary">Upload &amp; Import</button>
+    </form>
+  </div>
+
+  <!-- ── Manual Score Entry ─────────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-header">
+      <h3 class="section-title">✏ Manual Score Entry</h3>
+      <!-- Grade legend -->
+      <div class="grade-legend">
+        {% if course.department.grading_scale == '5.0' %}
+          <span class="legend-item grade-A">A: 70+</span>
+          <span class="legend-item grade-B">B: 60-69</span>
+          <span class="legend-item grade-C">C: 50-59</span>
+          <span class="legend-item grade-D">D: 45-49</span>
+          <span class="legend-item grade-E">E: 40-44</span>
+          <span class="legend-item grade-F">F: 0-39</span>
+        {% else %}
+          <span class="legend-item grade-A">A: 80+</span>
+          <span class="legend-item grade-B">B: 70-79</span>
+          <span class="legend-item grade-C">C: 60-69</span>
+          <span class="legend-item grade-D">D: 50-59</span>
+          <span class="legend-item grade-E">E: 40-49</span>
+          <span class="legend-item grade-F">F: 0-39</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <p style="font-size:0.85rem; color:var(--gray-600); margin-bottom:1rem;">
+      Enter the <strong>total score (0–100)</strong> for each student.
+      Grade and grade point are computed automatically.
+      Click <strong>Save as Draft</strong> when done — submit to HOD when all scores are ready.
+    </p>
+
+    {% if students %}
+    <form method="POST"
+          action="{{ url_for('lecturer.enter_scores', course_id=course.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <table class="entry-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Matric Number</th>
+            <th>Student Name</th>
+            <th>Score (0–100)</th>
+            <th>Grade Preview</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+          {% set existing_result = existing.get(student.id) %}
+          <tr class="{% if existing_result and existing_result.status == 'approved' %}row-approved{% endif %}">
+
+            <td class="text-muted">{{ loop.index }}</td>
+            <td><strong>{{ student.matric_number }}</strong></td>
+            <td>{{ student.user.full_name }}</td>
+
+            <td>
+              {% if existing_result and existing_result.status in ('approved', 'pending') %}
+                <!-- Locked: already submitted or approved -->
+                <input
+                  type="number"
+                  value="{{ existing_result.score|int }}"
+                  class="score-input locked"
+                  readonly
+                  title="Cannot edit — result is {{ existing_result.status }}"
+                />
+              {% else %}
+                <!-- Editable total score field -->
+                <input
+                  type="number"
+                  name="total_score_{{ student.id }}"
+                  value="{{ existing_result.score|int if existing_result else '' }}"
+                  min="0" max="100" step="1"
+                  class="score-input"
+                  placeholder="0–100"
+                  oninput="previewGrade(this, {{ student.id }}, '{{ course.department.grading_scale }}')"
+                />
+              {% endif %}
+            </td>
+
+            <td class="grade-preview" id="grade_{{ student.id }}">
+              {% if existing_result %}
+                <span class="grade-badge grade-{{ existing_result.grade }}">
+                  {{ existing_result.grade }} ({{ "%.2f"|format(existing_result.grade_point) }})
+                </span>
+              {% else %}—{% endif %}
+            </td>
+
+            <td>
+              {% if existing_result %}
+                <span class="status-badge status-{{ existing_result.status }}">
+                  {{ existing_result.status | capitalize }}
+                </span>
+              {% else %}
+                <span class="status-badge status-empty">Not entered</span>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Save button -->
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">💾 Save as Draft</button>
+        <span class="action-note">Save first, then submit to HOD when ready.</span>
+      </div>
+    </form>
+
+    <!-- Submit to HOD -->
+    {% set draft_count = existing.values()
+        | selectattr('status', 'equalto', 'draft') | list | length %}
+    {% if draft_count > 0 %}
+    <form method="POST"
+          action="{{ url_for('lecturer.submit_results', course_id=course.id) }}"
+          style="margin-top:1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button type="submit" class="btn-submit"
+              onclick="return confirm(
+                'Submit {{ draft_count }} draft result(s) for {{ course.code }} to HOD?'
+              )">
+        📨 Submit {{ draft_count }} Result(s) to HOD
+      </button>
+    </form>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <p>
+        No students found for Level {{ course.level }} in
+        {{ course.department.name }}.<br/>
+        Ask the Admin to enroll students in this department and level.
+      </p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Grade preview definitions ────────────────────────────────────────────────
+const GRADING = {
+  '5.0': [
+    [70, 100, 'A', 5.00], [60, 69, 'B', 4.00], [50, 59, 'C', 3.00],
+    [45, 49, 'D', 2.00],  [40, 44, 'E', 1.00], [0,  39, 'F', 0.00]
+  ],
+  '4.0': [
+    [80, 100, 'A', 4.00], [70, 79, 'B', 3.50], [60, 69, 'C', 3.00],
+    [50, 59, 'D', 2.50],  [40, 49, 'E', 2.00], [0,  39, 'F', 0.00]
+  ]
+};
+
+function previewGrade(input, studentId, scale) {
+  const score = parseFloat(input.value);
+  const cell  = document.getElementById('grade_' + studentId);
+
+  if (isNaN(score) || score < 0 || score > 100) {
+    cell.innerHTML = '—';
+    return;
+  }
+
+  const grades = GRADING[scale] || GRADING['5.0'];
+  for (const [min, max, letter, gp] of grades) {
+    if (score >= min && score <= max) {
+      cell.innerHTML =
+        `<span class="grade-badge grade-${letter}">${letter} (${gp.toFixed(2)})</span>`;
+      return;
+    }
+  }
+}
+</script>
+{% endblock %}

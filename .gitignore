@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Environment variables — NEVER commit this
+backend/.env
+.env
+
+# Database files (SQLite dev DB)
+*.db
+*.sqlite3
+
+# Uploads (student Excel files — contain personal data)
+backend/uploads/
+
+# AI model artifacts
+ai_module/models/*.pkl
+
+# AI training data (regenerate from script)
+ai_module/data/students.csv
+ai_module/data/results.csv
+
+# Flask migrations (generated per environment)
+# backend/migrations/    ← uncomment if you want to exclude migrations
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/

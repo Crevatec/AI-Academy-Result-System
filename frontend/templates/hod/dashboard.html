@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}HOD Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">HOD Dashboard</h1>
+      <p class="page-sub">{{ department.name }} — {{ department.grading_scale }} Scale</p>
+    </div>
+    {% if current_session %}
+    <div class="session-badge">📅 {{ current_session.session_name }} — Semester {{ current_session.semester }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">👨‍🎓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ student_count }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ pending_count }}</div>
+        <div class="stat-label">Pending Approvals</div>
+      </div>
+    </div>
+    <div class="stat-card stat-red">
+      <div class="stat-icon">⚠</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ at_risk_count }}</div>
+        <div class="stat-label">At-Risk Students</div>
+      </div>
+    </div>
+    <div class="stat-card stat-purple">
+      <div class="stat-icon">📋</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ co_count }}</div>
+        <div class="stat-label">Pending Carryovers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-card">
+    <h2 class="section-title">⚡ Quick Actions</h2>
+    <div class="action-row">
+      <a href="{{ url_for('hod.reports') }}" class="btn-action btn-blue">📊 View Reports</a>
+      <a href="{{ url_for('hod.carryovers') }}" class="btn-action btn-purple">📋 Carryover Management</a>
+      <a href="{{ url_for('hod.manage_access') }}" class="btn-action btn-orange">🔒 Result Access Control</a>
+      {% if current_session %}
+      <a href="{{ url_for('hod.export_dept_results', session_id=current_session.id) }}" class="btn-action btn-green">
+        ⬇ Export Results (Excel)
+      </a>
+      {% endif %}
+      <a href="{{ url_for('hod.export_carryovers_xlsx') }}" class="btn-action btn-red">⬇ Export Carryover Report</a>
+    </div>
+  </div>
+
+  <!-- Pending Submissions -->
+  <div class="section-card">
+    <h2 class="section-title">📬 Pending Result Submissions</h2>
+
+    {% if pending_by_course %}
+      {% for group in pending_by_course %}
+      <div class="course-review-block">
+        <div class="course-review-header">
+          <div>
+            <span class="course-code">{{ group.course.code }}</span>
+            <span class="course-title-text">{{ group.course.title }}</span>
+            <span class="badge badge-info">{{ group.results|length }} students</span>
+            <span class="badge badge-muted">{{ group.course.unit }} units</span>
+          </div>
+          <div class="review-actions">
+            <span class="lecturer-tag">
+              Submitted by: <strong>{{ group.lecturer.full_name if group.lecturer else 'Unknown' }}</strong>
+            </span>
+            <a href="{{ url_for('hod.review_course', course_id=group.course.id) }}"
+               class="btn-secondary btn-sm">👁 Review</a>
+
+            <!-- Batch Approve button -->
+            <form method="POST" action="{{ url_for('hod.approve_all_results', course_id=group.course.id) }}"
+                  style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn-approve btn-sm"
+                onclick="return confirm('Approve ALL {{ group.results|length }} results for {{ group.course.code }}?')">
+                ✓ Approve All ({{ group.results|length }})
+              </button>
+            </form>
+
+            <!-- Reject form -->
+            <button class="btn-reject btn-sm"
+                    onclick="toggleRejectForm('reject_{{ group.course.id }}')">
+              ✕ Reject
+            </button>
+          </div>
+        </div>
+
+        <!-- Reject form (hidden by default) -->
+        <div id="reject_{{ group.course.id }}" class="reject-form" style="display:none;">
+          <form method="POST" action="{{ url_for('hod.reject_results', course_id=group.course.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <textarea name="comment" class="form-textarea"
+                      placeholder="Reason for rejection (required)..." rows="2"></textarea>
+            <button type="submit" class="btn-reject">Confirm Rejection</button>
+            <button type="button" class="btn-ghost"
+                    onclick="toggleRejectForm('reject_{{ group.course.id }}')">Cancel</button>
+          </form>
+        </div>
+
+        <!-- Preview table: first 5 students -->
+        <table class="result-table compact">
+          <thead>
+            <tr>
+              <th>Matric</th><th>Student</th><th>CA</th><th>Practical</th>
+              <th>Exam</th><th>Total</th><th>Grade</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in group.results[:8] %}
+            <tr>
+              <td><strong>{{ r.student.matric_number }}</strong></td>
+              <td>{{ r.student.user.full_name }}</td>
+              <td>{{ r.detail.ca_score if r.detail and r.detail.ca_score is not none else '—' }}</td>
+              <td>{{ r.detail.practical_score if r.detail and r.detail.practical_score is not none else '—' }}</td>
+              <td>{{ r.detail.exam_score if r.detail and r.detail.exam_score is not none else '—' }}</td>
+              <td><strong>{{ r.score|int }}</strong></td>
+              <td><span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span></td>
+              <td>
+                <form method="POST" action="{{ url_for('hod.approve_single_result', result_id=r.id) }}"
+                      style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="btn-approve btn-xs"
+                          title="Approve only this student">✓</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+            {% if group.results|length > 8 %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">
+                + {{ group.results|length - 8 }} more students —
+                <a href="{{ url_for('hod.review_course', course_id=group.course.id) }}">View all</a>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <p>🎉 No pending result submissions at this time.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRejectForm(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

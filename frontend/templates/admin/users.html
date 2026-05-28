@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Manage Users{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Dashboard</a>
+      <h1 class="page-title">👥 Manage Users</h1>
+    </div>
+    <a href="{{ url_for('admin.create_user') }}" class="btn-primary">➕ Add New User</a>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="section-card" style="padding:0.75rem 1.5rem;">
+    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <a href="{{ url_for('admin.list_users') }}"
+         class="btn-action {{ 'btn-blue' if not role_filter else 'btn-ghost' }}" style="padding:0.35rem 0.9rem; font-size:0.8rem;">
+        All
+      </a>
+      {% for role in ['student','lecturer','hod','admin'] %}
+      <a href="{{ url_for('admin.list_users', role=role) }}"
+         class="btn-action {{ 'btn-blue' if role_filter == role else 'btn-ghost' }}" style="padding:0.35rem 0.9rem; font-size:0.8rem;">
+        {{ role | capitalize }}s
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="section-card">
+    {% if users %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td><strong>{{ user.full_name }}</strong></td>
+          <td>{{ user.email }}</td>
+          <td><span class="user-badge role-badge-{{ user.role }}">{{ user.role | upper }}</span></td>
+          <td class="text-center">
+            {% if user.is_active %}
+              <span class="status-badge status-approved">Active</span>
+            {% else %}
+              <span class="status-badge status-rejected">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}"
+                  style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit"
+                      class="{{ 'btn-reject' if user.is_active else 'btn-approve' }} btn-sm">
+                {{ 'Deactivate' if user.is_active else 'Activate' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No users found.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

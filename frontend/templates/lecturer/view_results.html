@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Results — {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('lecturer.dashboard') }}" class="back-link">← Dashboard</a>
+      <h1 class="page-title">📊 {{ course.code }} Results</h1>
+      <p class="page-sub">{{ course.title }} — {{ current_session.session_name }} Sem {{ current_session.semester }}</p>
+    </div>
+    <a href="{{ url_for('lecturer.download_course_results', course_id=course.id) }}" class="btn-primary">
+      ⬇ Download Excel
+    </a>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">👥</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ results|length }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">✓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ pass_count }}</div>
+        <div class="stat-label">Passed</div>
+      </div>
+    </div>
+    <div class="stat-card stat-red">
+      <div class="stat-icon">✕</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ fail_count }}</div>
+        <div class="stat-label">Failed</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">📈</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ avg_score }}</div>
+        <div class="stat-label">Class Average (%)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full results table -->
+  <div class="section-card">
+    <h2 class="section-title">📋 Student Results</h2>
+
+    {% if results %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Matric No</th>
+          <th>Student Name</th>
+          <th>CA (/30)</th>
+          <th>Practical</th>
+          <th>Exam (/70)</th>
+          <th>Total</th>
+          <th>Grade</th>
+          <th>GP</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td><strong>{{ r.student.matric_number }}</strong></td>
+          <td>{{ r.student.user.full_name }}</td>
+          <td class="text-center">{{ r.detail.ca_score if r.detail and r.detail.ca_score is not none else '—' }}</td>
+          <td class="text-center">{{ r.detail.practical_score if r.detail and r.detail.practical_score is not none else '—' }}</td>
+          <td class="text-center">{{ r.detail.exam_score if r.detail and r.detail.exam_score is not none else '—' }}</td>
+          <td class="text-center"><strong>{{ r.score|int }}</strong></td>
+          <td class="text-center">
+            <span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span>
+          </td>
+          <td class="text-center">{{ "%.2f"|format(r.grade_point) }}</td>
+          <td class="text-center">
+            <span class="status-badge status-{{ r.status }}">{{ r.status|capitalize }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>No results submitted for this course yet.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

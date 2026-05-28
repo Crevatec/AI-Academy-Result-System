@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}My Carryover Courses{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('student.dashboard') }}" class="back-link">← Back to Dashboard</a>
+      <h1 class="page-title">📋 My Carryover Courses</h1>
+      <p class="page-sub">{{ student.user.full_name }} — {{ student.matric_number }}</p>
+    </div>
+    <a href="{{ url_for('student.download_transcript') }}" class="btn-primary">⬇ Download Transcript</a>
+  </div>
+
+  <!-- Pending Carryovers -->
+  <div class="section-card">
+    <h2 class="section-title" style="color:#e74c3c;">⚠ Pending Carryovers ({{ carryover_data.total_pending }})</h2>
+
+    {% if carryover_data.pending %}
+    <div class="info-note" style="border-color:#e74c3c; background:#fff5f5; margin-bottom:1rem;">
+      These are courses you failed and must retake. The system has scheduled recommended
+      retake sessions based on your programme structure.
+    </div>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Units</th>
+          <th>Score Failed</th>
+          <th>Failed Session</th>
+          <th>Recommended Retake</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for co in carryover_data.pending %}
+        <tr style="background: #fff5f5;">
+          <td><span class="course-code">{{ co.course.code }}</span></td>
+          <td>{{ co.course.title }}</td>
+          <td class="text-center">{{ co.course.unit }}</td>
+          <td class="text-center" style="color:#e74c3c; font-weight:bold;">
+            {{ co.failed_score|int }}% (F)
+          </td>
+          <td class="text-center">
+            {{ co.failed_session.session_name }} Sem {{ co.failed_session.semester }}
+          </td>
+          <td class="text-center">
+            <span class="badge badge-orange">
+              Level {{ co.recommended_retake_level }}
+              Sem {{ co.recommended_retake_semester }}
+            </span>
+            <br/>
+            <small class="text-muted">{{ co.recommended_retake_session or 'Next available' }}</small>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+      <p>🎉 You have no pending carryover courses!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Cleared Carryovers -->
+  {% if carryover_data.cleared %}
+  <div class="section-card">
+    <h2 class="section-title" style="color:#27ae60;">✓ Cleared Carryovers</h2>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Original Score</th>
+          <th>Retake Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for co in carryover_data.cleared %}
+        <tr style="background:#f0fff4;">
+          <td><span class="course-code">{{ co.course.code }}</span></td>
+          <td>{{ co.course.title }}</td>
+          <td class="text-center">{{ co.failed_score|int }}%</td>
+          <td class="text-center" style="color:#27ae60; font-weight:bold;">
+            {{ co.cleared_score|int if co.cleared_score else '—' }}%
+          </td>
+          <td class="text-center">
+            <span class="status-badge status-approved">✓ Cleared</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

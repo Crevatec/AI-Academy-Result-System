@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Result Access Restricted{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+  <div class="access-blocked-card">
+    <div class="blocked-icon">🔒</div>
+    <h1 class="blocked-title">Result Access Restricted</h1>
+    <p class="blocked-name">{{ student.user.full_name }} — {{ student.matric_number }}</p>
+    <p class="blocked-message">
+      Your access to academic results has been temporarily restricted by your department.
+    </p>
+    {% if reason %}
+    <div class="blocked-reason">
+      <strong>Reason:</strong> {{ reason }}
+    </div>
+    {% endif %}
+    <p class="blocked-action">
+      Please visit your department office or contact your HOD to resolve this matter.
+    </p>
+    <a href="{{ url_for('auth.logout') }}" class="btn-secondary">Logout</a>
+  </div>
+</div>
+{% endblock %}

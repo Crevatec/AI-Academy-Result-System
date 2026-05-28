@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Result Access Control{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('hod.dashboard') }}" class="back-link">← Back</a>
+      <h1 class="page-title">🔒 Result Access Control</h1>
+      <p class="page-sub">{{ department.name }} — Grant or restrict student result viewing</p>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <p class="info-note">
+      By default, all students can view their approved results.
+      Use this panel to restrict access for students with outstanding obligations
+      (e.g., fees, disciplinary hold). Restricted students see only a message
+      with the reason you provide — they cannot view any result data.
+    </p>
+
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Matric No</th>
+          <th>Student Name</th>
+          <th>Level</th>
+          <th>Access Status</th>
+          <th>Restriction Reason</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in access_data %}
+        <tr class="{{ 'row-blocked' if not item.access_granted else '' }}">
+          <td><strong>{{ item.student.matric_number }}</strong></td>
+          <td>{{ item.student.user.full_name }}</td>
+          <td class="text-center">{{ item.student.level }}</td>
+          <td class="text-center">
+            {% if item.access_granted %}
+              <span class="status-badge status-approved">✓ Granted</span>
+            {% else %}
+              <span class="status-badge status-rejected">✕ Restricted</span>
+            {% endif %}
+          </td>
+          <td>{{ item.reason or '—' }}</td>
+          <td>
+            {% if item.access_granted %}
+              <!-- Restrict form -->
+              <button class="btn-reject btn-sm"
+                      onclick="showRestrictForm('restrict_{{ item.student.id }}')">
+                🔒 Restrict
+              </button>
+              <div id="restrict_{{ item.student.id }}" class="inline-form" style="display:none;">
+                <form method="POST"
+                      action="{{ url_for('hod.restrict_access', student_id=item.student.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="text" name="reason" class="form-input-inline"
+                         placeholder="Reason (e.g. Outstanding fees)" required />
+                  <button type="submit" class="btn-reject btn-xs">Confirm</button>
+                  <button type="button" class="btn-ghost btn-xs"
+                          onclick="hideRestrictForm('restrict_{{ item.student.id }}')">Cancel</button>
+                </form>
+              </div>
+            {% else %}
+              <!-- Grant access -->
+              <form method="POST"
+                    action="{{ url_for('hod.grant_access', student_id=item.student.id) }}"
+                    style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn-approve btn-sm"
+                        onclick="return confirm('Restore access for {{ item.student.user.full_name }}?')">
+                  🔓 Restore Access
+                </button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showRestrictForm(id) {
+  document.getElementById(id).style.display = 'block';
+}
+function hideRestrictForm(id) {
+  document.getElementById(id).style.display = 'none';
+}
+</script>
+{% endblock %}

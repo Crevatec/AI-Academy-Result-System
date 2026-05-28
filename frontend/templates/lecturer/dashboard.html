@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Lecturer Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Lecturer Dashboard</h1>
+      <p class="page-sub">{{ lecturer.user.full_name }} &middot; {{ lecturer.staff_id }} &middot; {{ lecturer.department.name }}</p>
+    </div>
+    {% if current_session %}
+    <div class="session-badge">📅 {{ current_session.session_name }} — Semester {{ current_session.semester }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">📚</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ lecturer.courses | length }}</div>
+        <div class="stat-label">Assigned Courses</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ course_summaries | selectattr('status', 'equalto', 'draft') | list | length }}</div>
+        <div class="stat-label">Drafts Pending Submission</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">✓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ course_summaries | selectattr('status', 'equalto', 'approved') | list | length }}</div>
+        <div class="stat-label">Approved Courses</div>
+      </div>
+    </div>
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">📨</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ course_summaries | selectattr('status', 'equalto', 'pending') | list | length }}</div>
+        <div class="stat-label">Awaiting HOD Review</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Course List -->
+  <div class="section-card">
+    <h2 class="section-title">📋 My Courses — {{ current_session.session_name if current_session else 'No Active Session' }}</h2>
+
+    {% if not current_session %}
+    <div class="empty-state">
+      <p>⚠ No active academic session configured. Contact the Admin.</p>
+    </div>
+    {% elif course_summaries %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Units</th>
+          <th>Level</th>
+          <th>Students Entered</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in course_summaries %}
+        <tr>
+          <td><span class="course-code">{{ item.course.code }}</span></td>
+          <td>{{ item.course.title }}</td>
+          <td class="text-center">{{ item.course.unit }}</td>
+          <td class="text-center">{{ item.course.level }}</td>
+          <td class="text-center">{{ item.submitted_count }}</td>
+          <td class="text-center">
+            {% if item.status == 'approved' %}
+              <span class="status-badge status-approved">✓ Approved</span>
+            {% elif item.status == 'pending' %}
+              <span class="status-badge status-pending">⏳ Pending Review</span>
+            {% elif item.status == 'draft' %}
+              <span class="status-badge status-draft">📝 Draft</span>
+            {% else %}
+              <span class="status-badge status-empty">Not Started</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+              {% if item.status not in ('approved', 'pending') %}
+              <a href="{{ url_for('lecturer.enter_scores', course_id=item.course.id) }}"
+                 class="btn-primary btn-sm">✏ Enter Scores</a>
+              {% endif %}
+
+              {% if item.submitted_count > 0 %}
+              <a href="{{ url_for('lecturer.view_course_results', course_id=item.course.id) }}"
+                 class="btn-secondary btn-sm">👁 View Results</a>
+              <a href="{{ url_for('lecturer.download_course_results', course_id=item.course.id) }}"
+                 class="btn-secondary btn-sm">⬇ Download</a>
+              {% endif %}
+
+              {% if item.status == 'draft' and item.submitted_count > 0 %}
+              <form method="POST" action="{{ url_for('lecturer.submit_results', course_id=item.course.id) }}"
+                    style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn-submit btn-sm"
+                        onclick="return confirm('Submit all draft results for {{ item.course.code }} to HOD?')">
+                  📨 Submit to HOD
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <div class="empty-state">
+      <p>No courses assigned to you yet. Contact the Admin to assign courses.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Instructions -->
+  <div class="section-card" style="border-left: 4px solid #1a3c6b;">
+    <h2 class="section-title">📌 How to Submit Results</h2>
+    <ol style="padding-left: 1.5rem; line-height: 2;">
+      <li>Click <strong>Enter Scores</strong> next to a course to input student scores (CA + Practical + Exam).</li>
+      <li>You can also upload scores in bulk using an <strong>Excel file</strong> (.xlsx).</li>
+      <li>Scores are saved as <strong>Draft</strong> until you submit.</li>
+      <li>When ready, click <strong>Submit to HOD</strong> — the HOD will review and approve.</li>
+      <li>Once approved, GPA/CGPA is automatically computed and students are notified.</li>
+    </ol>
+  </div>
+
+</div>
+{% endblock %}

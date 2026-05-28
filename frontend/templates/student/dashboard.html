@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">My Academic Dashboard</h1>
+      <p class="page-sub">{{ student.user.full_name }} &middot; {{ student.matric_number }} &middot; {{ student.department.name }} &middot; Level {{ student.level }}</p>
+    </div>
+    {% if current_session %}
+    <div class="session-badge">
+      📅 {{ current_session.session_name }} — Semester {{ current_session.semester }}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── CGPA Summary Cards ──────────────────────────────────────────── -->
+  <div class="stats-grid">
+
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">📊</div>
+      <div class="stat-body">
+        <div class="stat-value">
+          {% if cgpa_record %}{{ "%.2f"|format(cgpa_record.cgpa) }}{% else %}—{% endif %}
+        </div>
+        <div class="stat-label">Cumulative GPA (CGPA)</div>
+        <div class="stat-scale">/ {{ student.grading_scale }}</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-green">
+      <div class="stat-icon">🎓</div>
+      <div class="stat-body">
+        <div class="stat-value stat-class">
+          {% if cgpa_record %}{{ cgpa_record.classification }}{% else %}Pending{% endif %}
+        </div>
+        <div class="stat-label">Academic Classification</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">📚</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ cgpa_record.total_units_cumulative if cgpa_record else 0 }}</div>
+        <div class="stat-label">Total Credit Units</div>
+      </div>
+    </div>
+
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">🗓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ cgpa_record.semesters_completed if cgpa_record else 0 }}</div>
+        <div class="stat-label">Semesters Completed</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── AI Prediction Panel ─────────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2 class="section-title">🤖 AI Performance Prediction</h2>
+      <span class="badge badge-ai">Machine Learning</span>
+    </div>
+
+    <div id="ai-prediction" class="prediction-panel loading">
+      <div class="prediction-loading">
+        <div class="spinner"></div>
+        <p>Analyzing your academic data…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Two-column: Chart + Current Results ─────────────────────────── -->
+  <div class="two-col-grid">
+
+    <!-- GPA Trend Chart -->
+    <div class="section-card">
+      <h2 class="section-title">📈 GPA Trend</h2>
+      {% if chart_labels %}
+      <div class="chart-wrap">
+        <canvas id="gpaChart" height="220"></canvas>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <p>No GPA history yet. Results will appear here after approval.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Current Semester Results -->
+    <div class="section-card">
+      <h2 class="section-title">📋 Current Semester Results</h2>
+      {% if current_results %}
+      <table class="result-table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Unit</th>
+            <th>Score</th>
+            <th>Grade</th>
+            <th>GP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in current_results %}
+          <tr>
+            <td>
+              <span class="course-code">{{ r.course.code }}</span>
+              <span class="course-title">{{ r.course.title }}</span>
+            </td>
+            <td class="text-center">{{ r.course.unit }}</td>
+            <td class="text-center">{{ r.score|int }}%</td>
+            <td class="text-center">
+              <span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span>
+            </td>
+            <td class="text-center">{{ "%.2f"|format(r.grade_point) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="view-all">
+        <a href="{{ url_for('student.all_sessions') }}" class="btn-link">View all semesters →</a>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <p>No approved results for the current semester yet.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── GPA Trend Chart ──────────────────────────────────────────────────
+const labels = {{ chart_labels | tojson }};
+const data   = {{ chart_data   | tojson }};
+
+if (labels.length > 0) {
+  const ctx = document.getElementById('gpaChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'GPA',
+        data: data,
+        borderColor: '#1a3c6b',
+        backgroundColor: 'rgba(26, 60, 107, 0.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#1a3c6b',
+        pointRadius: 5,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          min: 0,
+          max: {{ student.grading_scale }},
+          ticks: { stepSize: 0.5 },
+        }
+      }
+    }
+  });
+}
+
+// ── AI Prediction fetch ─────────────────────────────────────────────
+fetch('/api/v1/predict/{{ student.id }}')
+  .then(res => res.json())
+  .then(data => {
+    const panel = document.getElementById('ai-prediction');
+    const riskColors = {
+      'Excellent': '#28a745',
+      'Average':   '#ffc107',
+      'At Risk':   '#dc3545',
+      'Unknown':   '#6c757d',
+    };
+    const color = riskColors[data.risk_level] || '#6c757d';
+    panel.classList.remove('loading');
+    panel.innerHTML = `
+      <div class="prediction-result">
+        <div class="pred-risk" style="color: ${color};">
+          <span class="pred-dot" style="background:${color};"></span>
+          ${data.risk_level}
+        </div>
+        <div class="pred-detail">
+          <div class="pred-item">
+            <span class="pred-key">Predicted GPA:</span>
+            <span class="pred-val">${data.predicted_gpa !== null ? data.predicted_gpa.toFixed(2) : '—'}</span>
+          </div>
+          <div class="pred-item">
+            <span class="pred-key">Confidence:</span>
+            <span class="pred-val">${data.confidence ? (data.confidence * 100).toFixed(1) + '%' : '—'}</span>
+          </div>
+          <div class="pred-item">
+            <span class="pred-key">Method:</span>
+            <span class="pred-val">${data.method || '—'}</span>
+          </div>
+        </div>
+        <p class="pred-note">
+          ${data.risk_level === 'At Risk'
+            ? '⚠ Please visit your academic advisor for guidance.'
+            : data.risk_level === 'Excellent'
+            ? '🌟 Keep up the excellent work!'
+            : '📘 Consistent performance. Keep improving!'}
+        </p>
+      </div>
+    `;
+  })
+  .catch(() => {
+    document.getElementById('ai-prediction').innerHTML =
+      '<p class="text-muted">AI prediction unavailable at this time.</p>';
+  });
+</script>
+{% endblock %}

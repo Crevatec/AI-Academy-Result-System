@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">⚙ Admin Dashboard</h1>
+      <p class="page-sub">System administration and configuration</p>
+    </div>
+    {% if current_session %}
+    <div class="session-badge">📅 Active: {{ current_session.session_name }} Sem {{ current_session.semester }}</div>
+    {% else %}
+    <div class="session-badge" style="background:#ffebee; color:#c0392b;">⚠ No Active Session</div>
+    {% endif %}
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">👨‍🎓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.total_students }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">👨‍🏫</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.total_lecturers }}</div>
+        <div class="stat-label">Total Lecturers</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">🏛</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.total_departments }}</div>
+        <div class="stat-label">Departments</div>
+      </div>
+    </div>
+    <div class="stat-card stat-primary">
+      <div class="stat-icon">📚</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ stats.total_courses }}</div>
+        <div class="stat-label">Courses</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Navigation -->
+  <div class="section-card">
+    <h2 class="section-title">⚡ Quick Actions</h2>
+    <div class="action-row">
+      <a href="{{ url_for('admin.create_user') }}" class="btn-action btn-blue">➕ Add New User</a>
+      <a href="{{ url_for('admin.list_users') }}" class="btn-action btn-green">👥 Manage Users</a>
+      <a href="{{ url_for('admin.list_departments') }}" class="btn-action btn-orange">🏛 Departments</a>
+      <a href="{{ url_for('admin.list_courses') }}" class="btn-action btn-purple">📚 Courses</a>
+      <a href="{{ url_for('admin.list_sessions') }}" class="btn-action btn-blue">📅 Sessions</a>
+    </div>
+  </div>
+
+  <!-- Departments Overview -->
+  <div class="section-card">
+    <h2 class="section-title">🏛 Departments Overview</h2>
+    {% if departments %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Code</th><th>Department Name</th><th>Grading Scale</th><th>HOD Assigned</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dept in departments %}
+        <tr>
+          <td><span class="course-code">{{ dept.code }}</span></td>
+          <td>{{ dept.name }}</td>
+          <td class="text-center"><span class="badge badge-info">{{ dept.grading_scale }}</span></td>
+          <td class="text-center">
+            {% if dept.hod_user_id %}
+              <span class="status-badge status-approved">✓ Assigned</span>
+            {% else %}
+              <span class="status-badge status-empty">Not Assigned</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No departments created yet.</p></div>
+    {% endif %}
+  </div>
+
+  <!-- Recent Users -->
+  <div class="section-card">
+    <div class="section-header">
+      <h2 class="section-title">👤 Recently Added Users</h2>
+      <a href="{{ url_for('admin.list_users') }}" class="btn-link">View all →</a>
+    </div>
+    {% if recent_users %}
+    <table class="result-table">
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for user in recent_users %}
+        <tr>
+          <td>{{ user.full_name }}</td>
+          <td>{{ user.email }}</td>
+          <td><span class="user-badge role-badge-{{ user.role }}">{{ user.role | upper }}</span></td>
+          <td class="text-center">
+            {% if user.is_active %}
+              <span class="status-badge status-approved">Active</span>
+            {% else %}
+              <span class="status-badge status-rejected">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No users yet.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

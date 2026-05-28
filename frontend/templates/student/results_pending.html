@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Results Not Yet Released{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+  <div class="access-blocked-card">
+    <div class="blocked-icon">⏳</div>
+    <h1 class="blocked-title" style="color:#e67e22;">Results Not Yet Released</h1>
+    <p class="blocked-message">
+      Results for <strong>{{ session.session_name }} — Semester {{ session.semester }}</strong>
+      have not been released yet.
+    </p>
+    <p class="blocked-action">
+      Please check back later or wait for a notification email when results are released.
+    </p>
+    <a href="{{ url_for('student.dashboard') }}" class="btn-primary">← Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Dashboard</a>
+      <h1 class="page-title">🏛 Manage Departments</h1>
+    </div>
+  </div>
+
+  <!-- Create Department Form -->
+  <div class="section-card">
+    <h2 class="section-title">➕ Add New Department</h2>
+    <form method="POST" action="{{ url_for('admin.create_department') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div style="display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:1rem; align-items:end;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Department Name</label>
+          <input type="text" name="name" class="form-input" required
+                 placeholder="e.g. Computer Science" />
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Code</label>
+          <input type="text" name="code" class="form-input" required
+                 placeholder="e.g. CS" style="text-transform:uppercase;" />
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Grading Scale</label>
+          <select name="grading_scale" class="form-input">
+            <option value="5.0">5.0 (University)</option>
+            <option value="4.0">4.0 (Polytechnic)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Add Department</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing Departments -->
+  <div class="section-card">
+    <h2 class="section-title">All Departments</h2>
+    {% if departments %}
+    <table class="result-table">
+      <thead>
+        <tr><th>Code</th><th>Department Name</th><th>Grading Scale</th><th>HOD</th></tr>
+      </thead>
+      <tbody>
+        {% for dept in departments %}
+        <tr>
+          <td><span class="course-code">{{ dept.code }}</span></td>
+          <td>{{ dept.name }}</td>
+          <td class="text-center"><span class="badge badge-info">{{ dept.grading_scale }}</span></td>
+          <td class="text-center">
+            {% if dept.hod_user_id %}
+              <span class="status-badge status-approved">HOD Assigned</span>
+            {% else %}
+              <span class="status-badge status-empty">Not Assigned</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No departments yet. Add one above.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

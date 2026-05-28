@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Department Reports{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('hod.dashboard') }}" class="back-link">← Back</a>
+      <h1 class="page-title">📊 Department Reports</h1>
+      <p class="page-sub">{{ department.name }} — GPA/CGPA summary and exports</p>
+    </div>
+  </div>
+
+  <!-- Export Panel -->
+  <div class="section-card">
+    <h2 class="section-title">⬇ Export Results</h2>
+    <div class="export-row">
+      {% for session in sessions %}
+      <div class="export-item">
+        <div class="export-label">
+          {{ session.session_name }} — Semester {{ session.semester }}
+          {% if session.is_results_released %}
+            <span class="badge badge-green">Released</span>
+          {% else %}
+            <span class="badge badge-muted">Not Released</span>
+          {% endif %}
+        </div>
+        <a href="{{ url_for('hod.export_dept_results', session_id=session.id) }}"
+           class="btn-secondary btn-sm">⬇ Download Excel</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Student GPA/CGPA Table -->
+  <div class="section-card">
+    <h2 class="section-title">🎓 Student Performance Summary</h2>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Matric No</th>
+          <th>Student Name</th>
+          <th>Level</th>
+          <th>CGPA</th>
+          <th>Classification</th>
+          <th>Carryovers</th>
+          <th>Transcript</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in report_data %}
+        <tr>
+          <td class="text-center text-muted">{{ loop.index }}</td>
+          <td><strong>{{ item.student.matric_number }}</strong></td>
+          <td>{{ item.student.user.full_name }}</td>
+          <td class="text-center">{{ item.student.level }}</td>
+          <td class="text-center">
+            {% if item.cgpa is not none %}
+              <strong>{{ "%.2f"|format(item.cgpa) }}</strong>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-center">
+            <span class="classification-badge cls-{{ item.classification | replace(' ','') | lower | truncate(10, True, '') }}">
+              {{ item.classification }}
+            </span>
+          </td>
+          <td class="text-center">
+            {% if item.carryovers > 0 %}
+              <span class="badge badge-red">{{ item.carryovers }} pending</span>
+            {% else %}
+              <span class="badge badge-green">None</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <a href="{{ url_for('hod.export_transcript', student_id=item.student.id) }}"
+               class="btn-link">⬇ Download</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

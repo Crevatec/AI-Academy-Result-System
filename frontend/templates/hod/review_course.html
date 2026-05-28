@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Review Results — {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('hod.dashboard') }}" class="back-link">← Back to Dashboard</a>
+      <h1 class="page-title">🔍 Review Results: {{ course.code }}</h1>
+      <p class="page-sub">
+        {{ course.title }} &middot; {{ course.unit }} Units &middot; Level {{ course.level }} &middot;
+        {{ current_session.session_name }} Sem {{ current_session.semester }}
+      </p>
+    </div>
+    {% if lecturer %}
+    <div class="session-badge">Submitted by: {{ lecturer.full_name }}</div>
+    {% endif %}
+  </div>
+
+  {% if results %}
+  <!-- Summary stats -->
+  <div class="stats-grid" style="grid-template-columns: repeat(4,1fr);">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon">👥</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ results | length }}</div>
+        <div class="stat-label">Total Students</div>
+      </div>
+    </div>
+    <div class="stat-card stat-green">
+      <div class="stat-icon">✓</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ results | selectattr('grade', 'ne', 'F') | list | length }}</div>
+        <div class="stat-label">Passed</div>
+      </div>
+    </div>
+    <div class="stat-card stat-red">
+      <div class="stat-icon">✕</div>
+      <div class="stat-body">
+        <div class="stat-value">{{ results | selectattr('grade', 'equalto', 'F') | list | length }}</div>
+        <div class="stat-label">Failed</div>
+      </div>
+    </div>
+    <div class="stat-card stat-orange">
+      <div class="stat-icon">📊</div>
+      <div class="stat-body">
+        {% set avg = (results | sum(attribute='score')) / (results | length) %}
+        <div class="stat-value">{{ "%.1f"|format(avg) }}%</div>
+        <div class="stat-label">Class Average</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Actions -->
+  <div class="section-card">
+    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+      <form method="POST" action="{{ url_for('hod.approve_all_results', course_id=course.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn-approve"
+                onclick="return confirm('Approve ALL {{ results|length }} results for {{ course.code }}?')">
+          ✓ Approve All {{ results|length }} Results
+        </button>
+      </form>
+
+      <button class="btn-reject" onclick="toggleRejectForm()">✕ Reject All</button>
+    </div>
+
+    <div id="rejectForm" style="display:none; margin-top:1rem;">
+      <form method="POST" action="{{ url_for('hod.reject_results', course_id=course.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="form-group">
+          <label class="form-label">Reason for Rejection (required)</label>
+          <textarea name="comment" class="form-textarea" rows="3"
+                    placeholder="e.g. Scores appear inconsistent with previous results. Please review and resubmit."
+                    required></textarea>
+        </div>
+        <div style="display:flex; gap:0.75rem;">
+          <button type="submit" class="btn-reject">Confirm Rejection</button>
+          <button type="button" class="btn-ghost" onclick="toggleRejectForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results Table with individual approve -->
+  <div class="section-card">
+    <h2 class="section-title">📋 Student Results</h2>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Matric No</th>
+          <th>Student Name</th>
+          <th>CA (/30)</th>
+          <th>Practical</th>
+          <th>Exam (/70)</th>
+          <th>Total</th>
+          <th>Grade</th>
+          <th>GP</th>
+          <th>Approve Individually</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td><strong>{{ r.student.matric_number }}</strong></td>
+          <td>{{ r.student.user.full_name }}</td>
+          <td class="text-center">
+            {{ r.detail.ca_score if r.detail and r.detail.ca_score is not none else '—' }}
+          </td>
+          <td class="text-center">
+            {{ r.detail.practical_score if r.detail and r.detail.practical_score is not none else '—' }}
+          </td>
+          <td class="text-center">
+            {{ r.detail.exam_score if r.detail and r.detail.exam_score is not none else '—' }}
+          </td>
+          <td class="text-center"><strong>{{ r.score | int }}</strong></td>
+          <td class="text-center">
+            <span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span>
+          </td>
+          <td class="text-center">{{ "%.2f"|format(r.grade_point) }}</td>
+          <td class="text-center">
+            <form method="POST" action="{{ url_for('hod.approve_single_result', result_id=r.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn-approve btn-xs"
+                      title="Approve only this student">✓ Approve</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="section-card">
+    <div class="empty-state">
+      <p>No pending results found for this course.</p>
+      <a href="{{ url_for('hod.dashboard') }}" class="btn-primary" style="margin-top:1rem;">Back to Dashboard</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRejectForm() {
+  const form = document.getElementById('rejectForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

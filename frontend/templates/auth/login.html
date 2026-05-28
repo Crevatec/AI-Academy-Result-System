@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — AcadResult</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+</head>
+<body class="login-page">
+
+  <div class="login-split">
+
+    <!-- Left: Branding panel -->
+    <div class="login-brand-panel">
+      <div class="brand-content">
+        <div class="brand-logo">🎓</div>
+        <h1 class="brand-title">AcadResult</h1>
+        <p class="brand-tagline">Academic Result Management &<br/>AI Performance Prediction System</p>
+        <div class="brand-features">
+          <div class="feature-item">✓ Automated GPA & CGPA Computation</div>
+          <div class="feature-item">✓ 4.0 & 5.0 Grading Scales</div>
+          <div class="feature-item">✓ AI Performance Prediction</div>
+          <div class="feature-item">✓ Role-Based Access Control</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Login form -->
+    <div class="login-form-panel">
+      <div class="login-box">
+        <h2 class="login-heading">Welcome Back</h2>
+        <p class="login-sub">Sign in to your account</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}" style="margin-bottom: 1rem;">
+              {{ message }}
+            </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-input"
+              placeholder="e.g. tgpa.2023.001.csc@tgpa.edu.ng"
+              required
+              autocomplete="email"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="input-with-toggle">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-input"
+                placeholder="Enter your password"
+                required
+                autocomplete="current-password"
+              />
+              <button type="button" class="toggle-password" onclick="togglePassword()" title="Show/hide password">
+                👁
+              </button>
+            </div>
+          </div>
+
+          <div class="form-check-row">
+            <label class="checkbox-label">
+              <input type="checkbox" name="remember" /> Remember me
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary btn-full">
+            Sign In
+          </button>
+        </form>
+
+        <div class="login-help">
+          <p>Forgot your password? Contact your department administrator.</p>
+        </div>
+
+        <!-- Updated Demo Credentials -->
+        <div class="demo-creds">
+          <p class="demo-title">Demo Credentials</p>
+
+          <div class="demo-row">
+            <span>Admin:</span>
+            <code>admin@tgpa.edu.ng / TGPAAdmin@2024</code>
+          </div>
+
+          <div class="demo-row">
+            <span>HOD (CSC):</span>
+            <code>hod.csc@tgpa.edu.ng / CSCHod@2024</code>
+          </div>
+
+          <div class="demo-row">
+            <span>Lecturer:</span>
+            <code>lec.csc.01@tgpa.edu.ng / CSCLecturer@2024</code>
+          </div>
+
+          <div class="demo-row">
+            <span>Student 200L:</span>
+            <code>tgpa.2023.001.csc@tgpa.edu.ng / CSCStudent@2023</code>
+          </div>
+
+          <div class="demo-row">
+            <span>Student 100L:</span>
+            <code>tgpa.2024.001.csc@tgpa.edu.ng / CSCStudent@2024</code>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function togglePassword() {
+      const pwd = document.getElementById('password');
+      pwd.type = pwd.type === 'password' ? 'text' : 'password';
+    }
+  </script>
+</body>
+</html>

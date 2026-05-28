@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Carryover Management{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('hod.dashboard') }}" class="back-link">← Back</a>
+      <h1 class="page-title">📋 Carryover Management</h1>
+      <p class="page-sub">{{ department.name }} — Students with outstanding failed courses</p>
+    </div>
+    <a href="{{ url_for('hod.export_carryovers_xlsx') }}" class="btn-primary">
+      ⬇ Download Excel Report
+    </a>
+  </div>
+
+  <div class="section-card">
+    <div class="info-note" style="border-color: #e74c3c; background: #fff5f5;">
+      <strong>📌 Carryover Scheduling Rule:</strong><br/>
+      Failed course at Level 100 Sem 1 → Recommended retake: Level 200 Sem 1<br/>
+      Failed course at Level 100 Sem 2 → Recommended retake: Level 200 Sem 2<br/>
+      A carryover is automatically cleared when the student passes the course on retake.
+    </div>
+  </div>
+
+  {% if summary %}
+    {% for item in summary %}
+    <div class="section-card">
+      <div class="course-review-header">
+        <div>
+          <strong>{{ item.student.user.full_name }}</strong>
+          <span class="text-muted">{{ item.student.matric_number }}</span>
+          <span class="badge badge-info">Level {{ item.student.level }}</span>
+        </div>
+        <div>
+          <span class="badge badge-red">{{ item.pending_count }} pending carryover(s)</span>
+          <a href="{{ url_for('hod.export_transcript', student_id=item.student.id) }}"
+             class="btn-secondary btn-sm">⬇ Transcript</a>
+        </div>
+      </div>
+
+      <table class="result-table compact" style="margin-top: 0.75rem;">
+        <thead>
+          <tr>
+            <th>Course Code</th>
+            <th>Course Title</th>
+            <th>Score Failed</th>
+            <th>Failed Session</th>
+            <th>Recommended Retake Level</th>
+            <th>Recommended Semester</th>
+            <th>Recommended Session</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for co in item.carryovers %}
+          <tr>
+            <td><span class="course-code">{{ co.course.code }}</span></td>
+            <td>{{ co.course.title }}</td>
+            <td class="text-center" style="color:#e74c3c; font-weight:bold;">
+              {{ co.failed_score|int }}%
+            </td>
+            <td class="text-center">{{ co.failed_session.session_name }} Sem {{ co.failed_session.semester }}</td>
+            <td class="text-center">
+              <span class="badge badge-orange">Level {{ co.recommended_retake_level }}</span>
+            </td>
+            <td class="text-center">Semester {{ co.recommended_retake_semester }}</td>
+            <td class="text-center">{{ co.recommended_retake_session or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="section-card">
+    <div class="empty-state">
+      <p>🎉 No students with pending carryovers in {{ department.name }}.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

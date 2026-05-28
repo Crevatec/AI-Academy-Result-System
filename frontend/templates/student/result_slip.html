@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Result Slip — {{ session.session_name }} Sem {{ session.semester }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('student.all_sessions') }}" class="back-link">← Back to All Results</a>
+      <h1 class="page-title">📄 Result Slip</h1>
+      <p class="page-sub">
+        {{ student.user.full_name }} &middot; {{ student.matric_number }} &middot;
+        {{ session.session_name }} — Semester {{ session.semester }}
+      </p>
+    </div>
+    <a href="{{ url_for('student.download_transcript') }}" class="btn-primary">⬇ Download Full Transcript</a>
+  </div>
+
+  <!-- GPA Summary for this semester -->
+  {% if gpa_record %}
+  <div class="cgpa-banner" style="margin-bottom:1.5rem;">
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ "%.2f"|format(gpa_record.gpa) }}</div>
+      <div class="cgpa-key">Semester GPA</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ gpa_record.total_units }}</div>
+      <div class="cgpa-key">Total Units</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ gpa_record.classification }}</div>
+      <div class="cgpa-key">Classification</div>
+    </div>
+    <div class="cgpa-item">
+      <div class="cgpa-val">{{ student.grading_scale }}</div>
+      <div class="cgpa-key">Grading Scale</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Detailed Results Table -->
+  <div class="section-card">
+    <h2 class="section-title">📋 Course Results</h2>
+
+    {% if results %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Course Code</th>
+          <th>Course Title</th>
+          <th>Units</th>
+          <th>CA (/30)</th>
+          <th>Practical</th>
+          <th>Exam (/70)</th>
+          <th>Total Score</th>
+          <th>Grade</th>
+          <th>Grade Point</th>
+          <th>Remark</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in results %}
+        <tr>
+          <td class="text-muted">{{ loop.index }}</td>
+          <td><span class="course-code">{{ r.course.code }}</span></td>
+          <td>{{ r.course.title }}</td>
+          <td class="text-center">{{ r.course.unit }}</td>
+          <td class="text-center">
+            {{ r.detail.ca_score if r.detail and r.detail.ca_score is not none else '—' }}
+          </td>
+          <td class="text-center">
+            {{ r.detail.practical_score if r.detail and r.detail.practical_score is not none else '—' }}
+          </td>
+          <td class="text-center">
+            {{ r.detail.exam_score if r.detail and r.detail.exam_score is not none else '—' }}
+          </td>
+          <td class="text-center"><strong>{{ r.score | int }}</strong></td>
+          <td class="text-center">
+            <span class="grade-badge grade-{{ r.grade }}">{{ r.grade }}</span>
+          </td>
+          <td class="text-center">{{ "%.2f" | format(r.grade_point) }}</td>
+          <td class="text-center">
+            {% if r.grade == 'F' %}
+              <span style="color:#e74c3c; font-weight:600;">Carryover</span>
+            {% else %}
+              <span style="color:#27ae60; font-weight:600;">Pass</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- GPA Computation Breakdown -->
+    {% if gpa_record %}
+    <div class="info-note" style="margin-top:1rem;">
+      <strong>GPA Computation:</strong>
+      Σ(Grade Point × Credit Units) ÷ Σ(Credit Units) =
+      {{ "%.2f"|format(gpa_record.total_points) }} ÷ {{ gpa_record.total_units }} =
+      <strong>{{ "%.2f"|format(gpa_record.gpa) }}</strong>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <p>No approved results found for this semester.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Grading Key -->
+  <div class="section-card">
+    <h2 class="section-title">🔑 Grading Key ({{ student.grading_scale }} Scale)</h2>
+    {% if student.grading_scale == '5.0' %}
+    <table class="result-table" style="max-width:500px;">
+      <thead><tr><th>Score Range</th><th>Grade</th><th>Grade Point</th><th>Remark</th></tr></thead>
+      <tbody>
+        <tr><td>70 – 100</td><td><span class="grade-badge grade-A">A</span></td><td>5.00</td><td>Excellent</td></tr>
+        <tr><td>60 – 69</td><td><span class="grade-badge grade-B">B</span></td><td>4.00</td><td>Very Good</td></tr>
+        <tr><td>50 – 59</td><td><span class="grade-badge grade-C">C</span></td><td>3.00</td><td>Good</td></tr>
+        <tr><td>45 – 49</td><td><span class="grade-badge grade-D">D</span></td><td>2.00</td><td>Pass</td></tr>
+        <tr><td>40 – 44</td><td><span class="grade-badge grade-E">E</span></td><td>1.00</td><td>Marginal Pass</td></tr>
+        <tr><td>0 – 39</td><td><span class="grade-badge grade-F">F</span></td><td>0.00</td><td>Fail</td></tr>
+      </tbody>
+    </table>
+    {% else %}
+    <table class="result-table" style="max-width:500px;">
+      <thead><tr><th>Score Range</th><th>Grade</th><th>Grade Point</th><th>Remark</th></tr></thead>
+      <tbody>
+        <tr><td>80 – 100</td><td><span class="grade-badge grade-A">A</span></td><td>4.00</td><td>Distinction</td></tr>
+        <tr><td>70 – 79</td><td><span class="grade-badge grade-B">B</span></td><td>3.50</td><td>Upper Credit</td></tr>
+        <tr><td>60 – 69</td><td><span class="grade-badge grade-C">C</span></td><td>3.00</td><td>Credit</td></tr>
+        <tr><td>50 – 59</td><td><span class="grade-badge grade-D">D</span></td><td>2.50</td><td>Pass</td></tr>
+        <tr><td>40 – 49</td><td><span class="grade-badge grade-E">E</span></td><td>2.00</td><td>Marginal Pass</td></tr>
+        <tr><td>0 – 39</td><td><span class="grade-badge grade-F">F</span></td><td>0.00</td><td>Fail</td></tr>
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

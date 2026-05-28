@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Create User{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('admin.list_users') }}" class="back-link">← Back to Users</a>
+      <h1 class="page-title">➕ Create New User</h1>
+    </div>
+  </div>
+
+  <div class="section-card" style="max-width:650px;">
+    <form method="POST" action="{{ url_for('admin.create_user') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input type="text" name="first_name" class="form-input" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input type="text" name="last_name" class="form-input" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-input" required
+               placeholder="e.g. student@acadresult.ng" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-input" required
+               placeholder="Minimum 8 characters" />
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select name="role" class="form-input" id="roleSelect" onchange="toggleRoleFields()" required>
+            <option value="">-- Select Role --</option>
+            <option value="student">Student</option>
+            <option value="lecturer">Lecturer</option>
+            <option value="hod">Head of Department (HOD)</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <select name="department_id" class="form-input">
+            <option value="">-- Select Department --</option>
+            {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }} ({{ dept.grading_scale }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Student-specific fields -->
+      <div id="studentFields" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Matric Number</label>
+            <input type="text" name="matric_number" class="form-input"
+                   placeholder="e.g. CS/2024/001" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Level</label>
+            <select name="level" class="form-input">
+              <option value="100">100</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="400">400</option>
+              <option value="500">500</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Grading Scale</label>
+            <select name="grading_scale" class="form-input">
+              <option value="5.0">5.0 (University)</option>
+              <option value="4.0">4.0 (Polytechnic)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lecturer-specific fields -->
+      <div id="lecturerFields" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Staff ID</label>
+          <input type="text" name="staff_id" class="form-input"
+                 placeholder="e.g. CS/STAFF/001" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">Create User</button>
+        <a href="{{ url_for('admin.list_users') }}" class="btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRoleFields() {
+  const role = document.getElementById('roleSelect').value;
+  document.getElementById('studentFields').style.display  = role === 'student'  ? 'block' : 'none';
+  document.getElementById('lecturerFields').style.display = role === 'lecturer' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

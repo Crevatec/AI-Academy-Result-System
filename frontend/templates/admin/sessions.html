@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Academic Sessions{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+
+  <div class="page-header">
+    <div>
+      <a href="{{ url_for('admin.dashboard') }}" class="back-link">← Dashboard</a>
+      <h1 class="page-title">📅 Academic Sessions</h1>
+      <p class="page-sub">Manage academic years and semesters. Only one session can be active at a time.</p>
+    </div>
+  </div>
+
+  <!-- Create Session Form -->
+  <div class="section-card">
+    <h2 class="section-title">➕ Create New Session</h2>
+    <form method="POST" action="{{ url_for('admin.create_session') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Session (Academic Year)</label>
+          <input type="text" name="session_name" class="form-input" required
+                 placeholder="e.g. 2024/2025" style="width:180px;" />
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Semester</label>
+          <select name="semester" class="form-input" style="width:150px;">
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-primary">Create Session</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Sessions Table -->
+  <div class="section-card">
+    <h2 class="section-title">All Sessions</h2>
+    {% if sessions %}
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Session</th><th>Semester</th><th>Active</th>
+          <th>Results Released</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for session in sessions %}
+        <tr class="{{ 'row-approved' if session.is_current else '' }}">
+          <td><strong>{{ session.session_name }}</strong></td>
+          <td class="text-center">Semester {{ session.semester }}</td>
+          <td class="text-center">
+            {% if session.is_current %}
+              <span class="status-badge status-approved">✓ Active</span>
+            {% else %}
+              <span class="status-badge status-empty">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if session.is_results_released %}
+              <span class="status-badge status-approved">Released</span>
+            {% else %}
+              <span class="status-badge status-pending">Not Released</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+              {% if not session.is_current %}
+              <form method="POST" action="{{ url_for('admin.set_current_session', session_id=session.id) }}"
+                    style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn-approve btn-sm"
+                        onclick="return confirm('Set {{ session.session_name }} Sem {{ session.semester }} as active?')">
+                  Set Active
+                </button>
+              </form>
+              {% endif %}
+
+              {% if not session.is_results_released %}
+              <form method="POST" action="{{ url_for('admin.release_results', session_id=session.id) }}"
+                    style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn-submit btn-sm"
+                        onclick="return confirm('Release results for {{ session.session_name }} Sem {{ session.semester }}? Students will be notified.')">
+                  Release Results
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><p>No sessions created yet. Add one above.</p></div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
