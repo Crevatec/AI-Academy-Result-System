@@ -2,14 +2,18 @@ services:
   - type: web
     name: acadresult
     runtime: python
-
-    buildCommand: cd backend && pip install -r requirements.txt
-
+    buildCommand: cd backend && pip install -r requirements.txt && flask db upgrade
     startCommand: cd backend && gunicorn run:app --bind 0.0.0.0:$PORT
-
     envVars:
       - key: FLASK_ENV
         value: production
-
       - key: SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acadresult-db
+          property: connectionString
+
+databases:
+  - name: acadresult-db
+    plan: free
