@@ -183,4 +183,5 @@ See `docs/DEPLOYMENT.md` for full step-by-step cloud deployment guide.
 | Lecturer | lec.csc.01@tgpa.edu.ng | Dept(CAPS)Lecturer@2024 |
 | Student | tgpa.2023.001.csc@tgpa.edu.ng | Dept(CAPS)Student@2024 |
 | Student | tgpa.2024.001.csc@tgpa.edu.ng | Dept(CAPS)Student1234! |
-Note: Dept CAPS means Abbrevation of the department in capital letter. 
+
+## Note: Dept CAPS means Abbrevation of the department in capital letter. 
