@@ -1,12 +1,11 @@
-```yaml id="w9kznf"
 services:
   - type: web
     name: acadresult
-    env: python
+    runtime: python
 
-    buildCommand: "cd backend && pip install -r requirements.txt"
+    buildCommand: cd backend && pip install -r requirements.txt
 
-    startCommand: "cd backend && gunicorn run:app --bind 0.0.0.0:$PORT"
+    startCommand: cd backend && gunicorn run:app --bind 0.0.0.0:$PORT
 
     envVars:
       - key: FLASK_ENV
@@ -14,4 +13,3 @@ services:
 
       - key: SECRET_KEY
         generateValue: true
-```
