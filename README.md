@@ -178,7 +178,9 @@ See `docs/DEPLOYMENT.md` for full step-by-step cloud deployment guide.
 
 | Role | Email | Password |
 |---|---|---|
-| Admin | admin@acadresult.ng | Admin1234! |
-| HOD | hod@cs.acadresult.ng | Hod1234! |
-| Lecturer | lecturer@acadresult.ng | Lecturer1234! |
-| Student | STU0001@acadresult.ng | Student1234! |
+| Admin | admin@tgpa.edu.ng | TGPAAdmin@2024 |
+| HOD | hod.csc@tgpa.edu.ng | Dept(CAPS)Hod@2024 |
+| Lecturer | lec.csc.01@tgpa.edu.ng | Dept(CAPS)Lecturer@2024 |
+| Student | tgpa.2023.001.csc@tgpa.edu.ng | Dept(CAPS)Student@2024 |
+| Student | tgpa.2024.001.csc@tgpa.edu.ng | Dept(CAPS)Student1234! |
+Note: Dept CAPS means Abbrevation of the department in capital letter. 
