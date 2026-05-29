@@ -19,7 +19,8 @@ from app.services.grading import compute_grade
 from app.services.gpa_engine import recompute_all_for_student
 from app.services.carryover_service import process_carryovers_for_session
 
-app = create_app("development")
+env = os.environ.get("FLASK_ENV", "development")
+app = create_app(env)
 random.seed(42)
 
 # ── Nigerian Names ────────────────────────────────────────────────────────────
